@@ -2,23 +2,36 @@ import pyedflib
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
+from scipy.signal import butter, lfilter
 
-def plotSignals(data, n_samples, sampling_duration, signal_labels, xLabel) :
+def butter_bandpass(lowcut, highcut, fs, order=5):
+  nyq = 0.5 * fs
+  low = lowcut / nyq
+  high = highcut / nyq
+  b, a = butter(order, [low, high], btype='band')
+  return b, a
+
+def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
+  b, a = butter_bandpass(lowcut, highcut, fs, order=order)
+  y = lfilter(b, a, data)
+  return y
+
+def plotSignals(data, n_samples, sampling_duration, signal_labels, xLabel, subplot_loc) :
   fig = plt.figure("EEG_Signals_Graphing")
 
   n_rows = len(data[0])
   time = sampling_duration * np.arange(n_samples) / n_samples
 
   ticklocs = []
-  ax2 = fig.add_subplot(1, 1, 1)
-  ax2.set_xlim(0, sampling_duration)
-  ax2.set_xticks(np.arange(sampling_duration))
+  ax = fig.add_subplot(subplot_loc)
+  ax.set_xlim(0, sampling_duration)
+  ax.set_xticks(np.arange(sampling_duration))
   dmin = data.min()
   dmax = data.max()
   dr = (dmax - dmin) * 0.7  # Crowd them a bit.
   y0 = dmin
   y1 = (n_rows - 1) * dr + dmax
-  ax2.set_ylim(y0, y1)
+  ax.set_ylim(y0, y1)
 
   segs = []
   for i in range(n_rows):
@@ -29,14 +42,15 @@ def plotSignals(data, n_samples, sampling_duration, signal_labels, xLabel) :
   offsets[:, 1] = ticklocs
 
   lines = LineCollection(segs, offsets=offsets, transOffset=None)
-  ax2.add_collection(lines)
+  ax.add_collection(lines)
 
   # Set the yticks to use axes coordinates on the y axis
-  ax2.set_yticks(ticklocs)
-  ax2.set_yticklabels(signal_labels)
+  ax.set_yticks(ticklocs)
+  ax.set_yticklabels(signal_labels)
 
-  ax2.set_xlabel(xLabel)
+  ax.set_xlabel(xLabel)
 
+def showPlots() :
   plt.tight_layout()
   plt.show()
 
@@ -92,6 +106,14 @@ def downsampleSignals(signals, n_samples) :
   
   return downsampledSignals.transpose()
 
+def bpfSignals(signals, lowcut, highcut, fs) :
+  parsedSignals = signals.transpose()
+
+  for i in range(len(parsedSignals)) :
+    parsedSignals[i, :] = butter_bandpass_filter(parsedSignals[i, :], lowcut, highcut, fs)
+
+  return parsedSignals.transpose()
+
 def main() :
   # file_name = input("Tuliskan nama file nya = ")
   file_name = "rsvp_5Hz_02a.edf"
@@ -108,13 +130,26 @@ def main() :
 
   n_samples = sampling_freq * sampling_duration 
 
+  # Cutoff Frequencies (in Hz)
+  lowcut = 1
+  highcut = 30
+
   signals_data = getSignals(properties["file"], properties["n_samples"], signal_labels)
   downsampled_signals = downsampleSignals(signals_data, n_samples)
+  filtered_signals = bpfSignals(downsampled_signals, lowcut, highcut, sampling_freq)
   plotSignals(downsampled_signals, 
                 n_samples, 
                 sampling_duration, 
                 signal_labels, 
-                "Time (s)")
+                "Downsampled signal - Time (s)",
+                211)
+  plotSignals(filtered_signals, 
+                n_samples, 
+                sampling_duration, 
+                signal_labels, 
+                "Filtered signal - Time (s)",
+                212)
+  showPlots()
 
 if __name__ == "__main__" :
   main()
