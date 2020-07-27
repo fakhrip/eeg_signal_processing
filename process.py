@@ -3,57 +3,118 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 
-# file_name = input("Tuliskan nama file nya = ")
-file_name = "rsvp_5Hz_02a.edf"
-file = pyedflib.EdfReader(file_name)
-numberOfSignals = file.signals_in_file
-samplingFrequncy = file.getSampleFrequencies()
-samplingDuration = file.getFileDuration()
-n_samples = samplingDuration * samplingFrequncy
-n_rows = 4
+def plotSignals(data, n_samples, sampling_duration, signal_labels, xLabel) :
+  fig = plt.figure("EEG_Signals_Graphing")
 
-signalLabels = file.getSignalLabels()
-parsedSignals = np.zeros((n_rows, file.getNSamples()[0]))
+  n_rows = len(data[0])
+  time = sampling_duration * np.arange(n_samples) / n_samples
 
-position = 0
-for i, label in enumerate(signalLabels) :
-  if label == "EEG P8" or label == "EEG P7" or label == "EEG O1" or label == "EEG O2" :
-    parsedSignals[position, :] = file.readSignal(i)
-    position += 1
+  ticklocs = []
+  ax2 = fig.add_subplot(1, 1, 1)
+  ax2.set_xlim(0, sampling_duration)
+  ax2.set_xticks(np.arange(sampling_duration))
+  dmin = data.min()
+  dmax = data.max()
+  dr = (dmax - dmin) * 0.7  # Crowd them a bit.
+  y0 = dmin
+  y1 = (n_rows - 1) * dr + dmax
+  ax2.set_ylim(y0, y1)
 
-data = parsedSignals.transpose()
+  segs = []
+  for i in range(n_rows):
+    segs.append(np.column_stack((time, data[:, i])))
+    ticklocs.append(i * dr)
 
-fig = plt.figure("EEG_Signals_Graphing")
-time = samplingDuration * np.arange(n_samples[0]) / n_samples[0]
+  offsets = np.zeros((n_rows, 2), dtype=float)
+  offsets[:, 1] = ticklocs
 
-# Plot the EEG
-ticklocs = []
-ax2 = fig.add_subplot(1, 1, 1)
-ax2.set_xlim(0, samplingDuration)
-ax2.set_xticks(np.arange(samplingDuration))
-dmin = data.min()
-dmax = data.max()
-dr = (dmax - dmin) * 0.7  # Crowd them a bit.
-y0 = dmin
-y1 = (n_rows - 1) * dr + dmax
-ax2.set_ylim(y0, y1)
+  lines = LineCollection(segs, offsets=offsets, transOffset=None)
+  ax2.add_collection(lines)
 
-segs = []
-for i in range(n_rows):
-  segs.append(np.column_stack((time, data[:, i])))
-  ticklocs.append(i * dr)
+  # Set the yticks to use axes coordinates on the y axis
+  ax2.set_yticks(ticklocs)
+  ax2.set_yticklabels(signal_labels)
 
-offsets = np.zeros((n_rows, 2), dtype=float)
-offsets[:, 1] = ticklocs
+  ax2.set_xlabel(xLabel)
 
-lines = LineCollection(segs, offsets=offsets, transOffset=None)
-ax2.add_collection(lines)
+  plt.tight_layout()
+  plt.show()
 
-# Set the yticks to use axes coordinates on the y axis
-ax2.set_yticks(ticklocs)
-ax2.set_yticklabels(['P8', 'P7', 'O1', 'O2'])
+def parseEDF(file_name) :
+  file                = pyedflib.EdfReader(file_name)
+  numberOfSignals     = file.signals_in_file
+  samplingFrequency   = file.getSampleFrequencies()
+  samplingDuration    = file.getFileDuration()
+  signalLabels        = file.getSignalLabels()
+  n_samples           = samplingDuration * samplingFrequency
 
-ax2.set_xlabel('Time (s)')
+  return {
+    "file": file,
+    "n_signals": numberOfSignals,
+    "n_samples": n_samples[0],
+    "signal_labels": signalLabels,
+    "sampling_duration": samplingDuration,
+    "sampling_frequency": samplingFrequency,
+  }
 
-plt.tight_layout()
-plt.show()
+def getSignals(file, n_samples, filtered_labels = None) :
+  if filtered_labels != None :
+    parsedSignals = np.zeros((len(filtered_labels), n_samples))
+  else :
+    parsedSignals = np.zeros((len(file.getSignalLabels()), n_samples))
+
+  position = 0
+  added_signals = list()
+  for i, label in enumerate(file.getSignalLabels()) :
+    if filtered_labels != None :
+      if label in filtered_labels and (label not in added_signals) :
+        parsedSignals[position, :] = file.readSignal(i)
+        added_signals.append(label)
+        position += 1  
+    else :
+      parsedSignals[i, :] = file.readSignal(i)
+
+  return parsedSignals.transpose()
+
+def downsampleSignals(signals, n_samples) :
+  parsedSignals = signals.transpose()
+
+  actual_n_samples = len(parsedSignals[0])
+  if n_samples < actual_n_samples :
+    downsampledSignals = np.zeros((len(parsedSignals), n_samples))
+    offset = int(actual_n_samples / n_samples)
+    for i in range(len(parsedSignals)) :
+      for j in range(n_samples) :
+        downsampledSignals[i, j] = parsedSignals[i, j * offset]
+  else :
+    print("[!] Sample frequency of downsampling need to be lower than the actual sample frequency")
+    return signals
+  
+  return downsampledSignals.transpose()
+
+def main() :
+  # file_name = input("Tuliskan nama file nya = ")
+  file_name = "rsvp_5Hz_02a.edf"
+  properties = parseEDF(file_name)
+
+  # signal_labels = properties["signal_labels"]
+  signal_labels = ["EEG P8", "EEG P7", "EEG O1", "EEG O2"]
+
+  # sampling_freq = properties["sampling_frequency"]
+  sampling_freq = 64 # in Hertz
+
+  # sampling_duration = properties["sampling_duration"]
+  sampling_duration = 10 # in Second
+
+  n_samples = sampling_freq * sampling_duration 
+
+  signals_data = getSignals(properties["file"], properties["n_samples"], signal_labels)
+  downsampled_signals = downsampleSignals(signals_data, n_samples)
+  plotSignals(downsampled_signals, 
+                n_samples, 
+                sampling_duration, 
+                signal_labels, 
+                "Time (s)")
+
+if __name__ == "__main__" :
+  main()
