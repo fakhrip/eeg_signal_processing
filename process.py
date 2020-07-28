@@ -13,10 +13,12 @@ def butter_bandpass(lowcut, highcut, fs, order=5):
   b, a = butter(order, [low, high], btype='band')
   return b, a
 
+
 def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
   b, a = butter_bandpass(lowcut, highcut, fs, order=order)
   y = lfilter(b, a, data)
   return y
+
 
 def plotSignals(fig, data, dmin, dmax, n_samples, sampling_duration, signal_labels, xLabel, subplot_loc) :
   n_rows = len(data[0])
@@ -48,6 +50,7 @@ def plotSignals(fig, data, dmin, dmax, n_samples, sampling_duration, signal_labe
 
   ax.set_xlabel(xLabel)
 
+
 def initPlots() :
   fig = plt.figure("EEG_Signals_Graphing", constrained_layout=True)
   spec = gridspec.GridSpec(ncols=2, nrows=2, figure=fig)
@@ -56,8 +59,10 @@ def initPlots() :
     "spec": spec
   }
 
+
 def showPlots() :
   plt.show()
+
 
 def parseEDF(file_name) :
   file                = pyedflib.EdfReader(file_name)
@@ -75,6 +80,7 @@ def parseEDF(file_name) :
     "sampling_duration": samplingDuration,
     "sampling_frequency": samplingFrequency,
   }
+
 
 def getSignals(file, n_samples, filtered_labels = None) :
   if filtered_labels != None :
@@ -95,6 +101,7 @@ def getSignals(file, n_samples, filtered_labels = None) :
 
   return parsedSignals.transpose()
 
+
 def downsampleSignals(signals, n_samples) :
   parsedSignals = signals.transpose()
 
@@ -111,6 +118,7 @@ def downsampleSignals(signals, n_samples) :
   
   return downsampledSignals.transpose()
 
+
 def bpfSignals(signals, lowcut, highcut, fs) :
   parsedSignals = signals.transpose()
 
@@ -118,6 +126,7 @@ def bpfSignals(signals, lowcut, highcut, fs) :
     parsedSignals[i] = butter_bandpass_filter(parsedSignals[i], lowcut, highcut, fs)
 
   return parsedSignals.transpose()
+
 
 def fftSignals(signals, n_samples) :
   parsedSignals = signals.transpose()
@@ -127,6 +136,7 @@ def fftSignals(signals, n_samples) :
     parsedSignals[i] = [(20 * math.log10(np.absolute(x))) for x in parsedSignals[i]]
 
   return parsedSignals.transpose()
+
 
 def main() :
   # file_name = input("Tuliskan nama file nya = ")
@@ -160,6 +170,7 @@ def main() :
                 signal_labels, 
                 "Original signals - Time (s)",
                 plotData["spec"][0, 0])
+
   downsampled_signals = downsampleSignals(signals_data, n_samples)
   plotSignals(plotData["fig"],
                 downsampled_signals, 
@@ -170,6 +181,7 @@ def main() :
                 signal_labels, 
                 "Downsampled signals - Time (s)",
                 plotData["spec"][0, 1])
+
   filtered_signals = bpfSignals(downsampled_signals, lowcut, highcut, sampling_freq)
   plotSignals(plotData["fig"],
                 filtered_signals, 
@@ -180,6 +192,7 @@ def main() :
                 signal_labels, 
                 "Filtered signals - Time (s)",
                 plotData["spec"][1, 0])
+
   transformed_signals = fftSignals(filtered_signals, n_samples)
   plotSignals(plotData["fig"],
                 transformed_signals, 
