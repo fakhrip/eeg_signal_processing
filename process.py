@@ -110,7 +110,7 @@ def bpfSignals(signals, lowcut, highcut, fs) :
   parsedSignals = signals.transpose()
 
   for i in range(len(parsedSignals)) :
-    parsedSignals[i, :] = butter_bandpass_filter(parsedSignals[i, :], lowcut, highcut, fs)
+    parsedSignals[i] = butter_bandpass_filter(parsedSignals[i], lowcut, highcut, fs)
 
   return parsedSignals.transpose()
 
@@ -136,13 +136,13 @@ def main() :
 
   signals_data = getSignals(properties["file"], properties["n_samples"], signal_labels)
   downsampled_signals = downsampleSignals(signals_data, n_samples)
-  filtered_signals = bpfSignals(downsampled_signals, lowcut, highcut, sampling_freq)
   plotSignals(downsampled_signals, 
                 n_samples, 
                 sampling_duration, 
                 signal_labels, 
                 "Downsampled signal - Time (s)",
                 121)
+  filtered_signals = bpfSignals(downsampled_signals, lowcut, highcut, sampling_freq)
   plotSignals(filtered_signals, 
                 n_samples, 
                 sampling_duration, 
