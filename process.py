@@ -1,6 +1,7 @@
 import pyedflib
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 from matplotlib.collections import LineCollection
 from scipy.signal import butter, lfilter
 
@@ -16,9 +17,7 @@ def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
   y = lfilter(b, a, data)
   return y
 
-def plotSignals(data, n_samples, sampling_duration, signal_labels, xLabel, subplot_loc) :
-  fig = plt.figure("EEG_Signals_Graphing")
-
+def plotSignals(fig, data, dmin, dmax, n_samples, sampling_duration, signal_labels, xLabel, subplot_loc) :
   n_rows = len(data[0])
   time = sampling_duration * np.arange(n_samples) / n_samples
 
@@ -26,8 +25,6 @@ def plotSignals(data, n_samples, sampling_duration, signal_labels, xLabel, subpl
   ax = fig.add_subplot(subplot_loc)
   ax.set_xlim(0, sampling_duration)
   ax.set_xticks(np.arange(sampling_duration))
-  dmin = data.min()
-  dmax = data.max()
   dr = (dmax - dmin) * 0.7  # Crowd them a bit.
   y0 = dmin
   y1 = (n_rows - 1) * dr + dmax
@@ -50,8 +47,15 @@ def plotSignals(data, n_samples, sampling_duration, signal_labels, xLabel, subpl
 
   ax.set_xlabel(xLabel)
 
+def initPlots() :
+  fig = plt.figure("EEG_Signals_Graphing", constrained_layout=True)
+  spec = gridspec.GridSpec(ncols=2, nrows=2, figure=fig)
+  return {
+    "fig": fig,
+    "spec": spec
+  }
+
 def showPlots() :
-  plt.tight_layout()
   plt.show()
 
 def parseEDF(file_name) :
@@ -126,7 +130,7 @@ def main() :
   sampling_freq = 64 # in Hertz
 
   # sampling_duration = properties["sampling_duration"]
-  sampling_duration = 10 # in Second
+  sampling_duration = 20 # in Second
 
   n_samples = sampling_freq * sampling_duration 
 
@@ -134,21 +138,47 @@ def main() :
   lowcut = 1
   highcut = 30
 
+  plotData = initPlots()
+
   signals_data = getSignals(properties["file"], properties["n_samples"], signal_labels)
+  plotSignals(plotData["fig"],
+                signals_data, 
+                signals_data.min(),
+                signals_data.max(),
+                properties["n_samples"], 
+                sampling_duration, 
+                signal_labels, 
+                "Original signals - Time (s)",
+                plotData["spec"][0, 0])
   downsampled_signals = downsampleSignals(signals_data, n_samples)
-  plotSignals(downsampled_signals, 
+  plotSignals(plotData["fig"],
+                downsampled_signals, 
+                signals_data.min(),
+                signals_data.max(),
                 n_samples, 
                 sampling_duration, 
                 signal_labels, 
-                "Downsampled signal - Time (s)",
-                121)
+                "Downsampled signals - Time (s)",
+                plotData["spec"][0, 1])
   filtered_signals = bpfSignals(downsampled_signals, lowcut, highcut, sampling_freq)
-  plotSignals(filtered_signals, 
+  plotSignals(plotData["fig"],
+                filtered_signals, 
+                signals_data.min(),
+                signals_data.max(),
                 n_samples, 
                 sampling_duration, 
                 signal_labels, 
-                "Filtered signal - Time (s)",
-                122)
+                "Filtered signals - Time (s)",
+                plotData["spec"][1, 0])
+  plotSignals(plotData["fig"],
+                filtered_signals, 
+                signals_data.min(),
+                signals_data.max(),
+                n_samples, 
+                sampling_duration, 
+                signal_labels, 
+                "Filtered signals - Time (s)",
+                plotData["spec"][1, 1])
   showPlots()
 
 if __name__ == "__main__" :
