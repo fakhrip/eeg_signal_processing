@@ -130,7 +130,7 @@ def main() :
 
   n_samples = sampling_freq * sampling_duration 
 
-  # Cutoff Frequencies (in Hz)
+  # Cutoff Frequencies (in Hertz)
   lowcut = 1
   highcut = 30
 
