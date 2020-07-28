@@ -1,3 +1,4 @@
+import math
 import pyedflib
 import numpy as np
 import matplotlib.pyplot as plt
@@ -118,6 +119,15 @@ def bpfSignals(signals, lowcut, highcut, fs) :
 
   return parsedSignals.transpose()
 
+def fftSignals(signals, n_samples) :
+  parsedSignals = signals.transpose()
+
+  for i in range(len(parsedSignals)) :
+    parsedSignals[i] = np.fft.fft(parsedSignals[i])
+    parsedSignals[i] = [(20 * math.log10(np.absolute(x))) for x in parsedSignals[i]]
+
+  return parsedSignals.transpose()
+
 def main() :
   # file_name = input("Tuliskan nama file nya = ")
   file_name = "rsvp_5Hz_02a.edf"
@@ -170,14 +180,15 @@ def main() :
                 signal_labels, 
                 "Filtered signals - Time (s)",
                 plotData["spec"][1, 0])
+  transformed_signals = fftSignals(filtered_signals, n_samples)
   plotSignals(plotData["fig"],
-                filtered_signals, 
+                transformed_signals, 
                 signals_data.min(),
                 signals_data.max(),
-                n_samples, 
+                len(transformed_signals), 
                 sampling_duration, 
                 signal_labels, 
-                "Filtered signals - Time (s)",
+                "FFT signals - Frequency (Hz)",
                 plotData["spec"][1, 1])
   showPlots()
 
