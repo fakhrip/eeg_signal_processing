@@ -142,13 +142,13 @@ def main() :
                 sampling_duration, 
                 signal_labels, 
                 "Downsampled signal - Time (s)",
-                211)
+                121)
   plotSignals(filtered_signals, 
                 n_samples, 
                 sampling_duration, 
                 signal_labels, 
                 "Filtered signal - Time (s)",
-                212)
+                122)
   showPlots()
 
 if __name__ == "__main__" :
