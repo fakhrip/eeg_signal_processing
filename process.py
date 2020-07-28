@@ -1,3 +1,4 @@
+import os
 import math
 import pyedflib
 import numpy as np
@@ -51,8 +52,9 @@ def plotSignals(fig, data, dmin, dmax, n_samples, sampling_duration, signal_labe
   ax.set_xlabel(xLabel)
 
 
-def initPlots() :
-  fig = plt.figure("EEG_Signals_Graphing", constrained_layout=True)
+def initPlots(file_name) :
+  fig = plt.figure(file_name, constrained_layout=True, dpi=100)
+  fig.set_size_inches(16.5, 8.5)
   spec = gridspec.GridSpec(ncols=2, nrows=2, figure=fig)
   return {
     "fig": fig,
@@ -62,6 +64,10 @@ def initPlots() :
 
 def showPlots() :
   plt.show()
+
+
+def generatePlotsToPNG(file_name) :
+  plt.savefig("{}.png".format(file_name))
 
 
 def parseEDF(file_name) :
@@ -138,28 +144,22 @@ def fftSignals(signals, n_samples) :
   return parsedSignals.transpose()
 
 
-def main() :
-  # file_name = input("Tuliskan nama file nya = ")
-  file_name = "rsvp_5Hz_02a.edf"
+def processEDFFile(file_name) :
   properties = parseEDF(file_name)
 
   # signal_labels = properties["signal_labels"]
-  signal_labels = ["EEG P8", "EEG P7", "EEG O1", "EEG O2"]
-
   # sampling_freq = properties["sampling_frequency"]
+
+  signal_labels = ["EEG P8", "EEG P7", "EEG O1", "EEG O2"]
   sampling_freq = 64 # in Hertz
-
-  # sampling_duration = properties["sampling_duration"]
-  sampling_duration = 20 # in Second
-
+  sampling_duration = properties["sampling_duration"]
   n_samples = sampling_freq * sampling_duration 
 
   # Cutoff Frequencies (in Hertz)
   lowcut = 1
   highcut = 30
 
-  plotData = initPlots()
-
+  plotData = initPlots(file_name)
   signals_data = getSignals(properties["file"], properties["n_samples"], signal_labels)
   plotSignals(plotData["fig"],
                 signals_data, 
@@ -203,7 +203,24 @@ def main() :
                 signal_labels, 
                 "FFT signals - Frequency (Hz)",
                 plotData["spec"][1, 1])
-  showPlots()
+  generatePlotsToPNG(file_name)
+
+
+def main() :
+  print("[+] Starting ...")
+  isExist = False
+  files = [f for f in os.listdir('.') if os.path.isfile(f)]
+  for f in files :
+    if(f.split(".")[-1] == "edf") :
+      isExist = True
+      print("\n[|] Processing {}".format(f))
+      processEDFFile(f)
+      print("[|] Graph for {} has been generated to {}.png".format(f, f.split(".edf")[0]))
+
+  if not isExist :
+    print("\n[!] There are no .edf file found")
+  else :
+    print("\n[+] All process finished successfully")
 
 if __name__ == "__main__" :
   main()
