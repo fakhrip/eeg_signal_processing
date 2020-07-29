@@ -28,7 +28,7 @@ def plotSignals(fig, data, dmin, dmax, n_samples, sampling_duration, signal_labe
   ticklocs = []
   ax = fig.add_subplot(subplot_loc)
   ax.set_xlim(0, sampling_duration)
-  ax.set_xticks(np.arange(sampling_duration))
+  ax.set_xticks(np.arange(0, sampling_duration, 50))
   dr = (dmax - dmin) * 0.7  # Crowd them a bit.
   y0 = dmin
   y1 = (n_rows - 1) * dr + dmax
