@@ -21,14 +21,14 @@ def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
   return y
 
 
-def plotSignals(fig, data, dmin, dmax, n_samples, sampling_duration, signal_labels, xLabel, subplot_loc) :
+def plotSignals(fig, data, dmin, dmax, n_samples, sampling_duration, signal_labels, xLabel, subplot_loc, xticks_offset = 50) :
   n_rows = len(data[0])
   time = sampling_duration * np.arange(n_samples) / n_samples
 
   ticklocs = []
   ax = fig.add_subplot(subplot_loc)
   ax.set_xlim(0, sampling_duration)
-  ax.set_xticks(np.arange(0, sampling_duration, 50))
+  ax.set_xticks(np.arange(0, sampling_duration, xticks_offset))
   dr = (dmax - dmin)  # Crowd them a bit.
   y0 = dmin
   y1 = (n_rows - 1) * dr + dmax
@@ -140,10 +140,12 @@ def fftSignals(signals, sampling_freq) :
   transformed_signals = np.zeros((len(parsedSignals), len(np.absolute(np.fft.rfft(parsedSignals[0])))))
   for i in range(len(transformed_signals)) :
     transformed_signals[i] = np.absolute(np.fft.rfft(parsedSignals[i]))
+
+  freq = np.fft.rfftfreq(len(parsedSignals[0]), 1.0/sampling_freq).max()
     
   return  {
     "signals": transformed_signals.transpose(),
-    "frequency": len(transformed_signals.transpose())
+    "frequency": freq
   }
 
 
@@ -201,12 +203,14 @@ def processEDFFile(file_name) :
                 transformed_signals["signals"], 
                 transformed_signals["signals"].min(),
                 transformed_signals["signals"].max(),
+                len(transformed_signals["signals"]), 
                 transformed_signals["frequency"], 
-                sampling_duration, 
                 signal_labels, 
                 "FFT signals - Frequency (Hz)",
-                plotData["spec"][1, 1])
+                plotData["spec"][1, 1],
+                1)
   generatePlotsToPNG(file_name)
+  # showPlots()
 
 
 def main() :
