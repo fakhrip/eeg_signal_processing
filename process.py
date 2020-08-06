@@ -206,8 +206,7 @@ def processEDFFile(file_name) :
                 signal_labels, 
                 "FFT signals - Frequency (Hz)",
                 plotData["spec"][1, 1])
-  # generatePlotsToPNG(file_name)
-  showPlots()
+  generatePlotsToPNG(file_name)
 
 
 def main() :
@@ -220,7 +219,6 @@ def main() :
       print("\n[|] Processing {}".format(f))
       processEDFFile(f)
       print("[|] Graph for {} has been generated to {}.png".format(f, f.split(".edf")[0]))
-      break
 
   if not isExist :
     print("\n[!] There are no .edf file found")
