@@ -29,7 +29,7 @@ def plotSignals(fig, data, dmin, dmax, n_samples, sampling_duration, signal_labe
   ax = fig.add_subplot(subplot_loc)
   ax.set_xlim(0, sampling_duration)
   ax.set_xticks(np.arange(0, sampling_duration, 50))
-  dr = (dmax - dmin) * 0.7  # Crowd them a bit.
+  dr = (dmax - dmin)  # Crowd them a bit.
   y0 = dmin
   y1 = (n_rows - 1) * dr + dmax
   ax.set_ylim(y0, y1)
@@ -134,14 +134,17 @@ def bpfSignals(signals, lowcut, highcut, fs) :
   return parsedSignals.transpose()
 
 
-def fftSignals(signals, n_samples) :
+def fftSignals(signals, sampling_freq) :
   parsedSignals = signals.transpose()
 
-  for i in range(len(parsedSignals)) :
-    parsedSignals[i] = np.fft.fft(parsedSignals[i])
-    parsedSignals[i] = [(20 * math.log10(np.absolute(x))) for x in parsedSignals[i]]
-
-  return parsedSignals.transpose()
+  transformed_signals = np.zeros((len(parsedSignals), len(np.absolute(np.fft.rfft(parsedSignals[0])))))
+  for i in range(len(transformed_signals)) :
+    transformed_signals[i] = np.absolute(np.fft.rfft(parsedSignals[i]))
+    
+  return  {
+    "signals": transformed_signals.transpose(),
+    "frequency": len(transformed_signals.transpose())
+  }
 
 
 def processEDFFile(file_name) :
@@ -193,17 +196,18 @@ def processEDFFile(file_name) :
                 "Filtered signals - Time (s)",
                 plotData["spec"][1, 0])
 
-  transformed_signals = fftSignals(filtered_signals, n_samples)
+  transformed_signals = fftSignals(filtered_signals, sampling_freq)
   plotSignals(plotData["fig"],
-                transformed_signals, 
-                signals_data.min(),
-                signals_data.max(),
-                len(transformed_signals), 
+                transformed_signals["signals"], 
+                transformed_signals["signals"].min(),
+                transformed_signals["signals"].max(),
+                transformed_signals["frequency"], 
                 sampling_duration, 
                 signal_labels, 
                 "FFT signals - Frequency (Hz)",
                 plotData["spec"][1, 1])
-  generatePlotsToPNG(file_name)
+  # generatePlotsToPNG(file_name)
+  showPlots()
 
 
 def main() :
@@ -216,6 +220,7 @@ def main() :
       print("\n[|] Processing {}".format(f))
       processEDFFile(f)
       print("[|] Graph for {} has been generated to {}.png".format(f, f.split(".edf")[0]))
+      break
 
   if not isExist :
     print("\n[!] There are no .edf file found")
