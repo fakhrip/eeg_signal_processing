@@ -153,7 +153,7 @@ def processEDFFile(file_name) :
   # signal_labels = properties["signal_labels"]
   # sampling_freq = properties["sampling_frequency"]
 
-  signal_labels = ["EEG P8", "EEG P7", "EEG O1", "EEG O2"]
+  signal_labels = ["EEG PO8", "EEG PO7", "EEG P8", "EEG P7", "EEG O1", "EEG O2", "EEG PO3", "EEG PO4"]
   sampling_freq = 64 # in Hertz
   sampling_duration = properties["sampling_duration"]
   n_samples = sampling_freq * sampling_duration 
