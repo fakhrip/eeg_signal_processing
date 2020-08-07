@@ -4,6 +4,7 @@ import pyedflib
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+import pandas as pd
 from matplotlib.collections import LineCollection
 from scipy.signal import butter, lfilter
 
@@ -67,7 +68,8 @@ def showPlots() :
 
 
 def generatePlotsToPNG(file_name) :
-  plt.savefig("{}.png".format(file_name))
+  plt.savefig("./signals_plot/{}.png".format(file_name))
+  plt.close()
 
 
 def parseEDF(file_name) :
@@ -141,7 +143,7 @@ def fftSignals(signals, sampling_freq) :
   for i in range(len(transformed_signals)) :
     transformed_signals[i] = np.absolute(np.fft.rfft(parsedSignals[i]))
 
-  freq = np.fft.rfftfreq(len(parsedSignals[0]), 1.0/sampling_freq).max()
+  freq = np.fft.rfftfreq(len(parsedSignals[0]), 1.0/sampling_freq)
     
   return  {
     "signals": transformed_signals.transpose(),
@@ -163,6 +165,8 @@ def processEDFFile(file_name) :
   # Cutoff Frequencies (in Hertz)
   lowcut = 1
   highcut = 30
+
+  print("[|] Plotting FFT Signal")
 
   plotData = initPlots(file_name)
   signals_data = getSignals(properties["file"], properties["n_samples"], signal_labels)
@@ -204,14 +208,62 @@ def processEDFFile(file_name) :
                 transformed_signals["signals"].min(),
                 transformed_signals["signals"].max(),
                 len(transformed_signals["signals"]), 
-                transformed_signals["frequency"], 
+                transformed_signals["frequency"].max(), 
                 signal_labels, 
                 "FFT signals - Frequency (Hz)",
                 plotData["spec"][1, 1],
                 1)
-  generatePlotsToPNG(file_name)
-  # showPlots()
 
+  print("[|] Plotting PSD Signal")
+
+  # Create signals_plot folder if not exist
+  try:  
+    os.mkdir("./signals_plot")  
+  except OSError as error:  
+    pass
+
+  generatePlotsToPNG(file_name)
+
+  # Define EEG band frequencies
+  eeg_bands = {
+    "Delta": (0, 4),
+    "Theta": (4, 8),
+    "Alpha": (8, 12),
+    "Beta": (12, 30),
+    "Gamma": (30, 45)
+  }
+
+  signals = transformed_signals["signals"].transpose()
+  fft_freq = transformed_signals["frequency"]
+
+  try:  
+    os.makedirs("./psd_plot/{}".format(file_name.split(".edf")[0]))  
+  except OSError as error:  
+    pass
+
+  # Take the mean of the fft amplitude for each EEG band
+  for i in range(len(signals)) :
+    fft_vals = signals[i]
+
+    eeg_band_fft = dict()
+    for band in eeg_bands:  
+      freq_ix = np.where((fft_freq >= eeg_bands[band][0]) & 
+                        (fft_freq <= eeg_bands[band][1]))[0]
+      eeg_band_fft[band] = np.mean(fft_vals[freq_ix])
+
+    fig = plt.figure(figsize=(20,10), dpi=75)
+    ax = fig.add_subplot(111)
+
+    df = pd.DataFrame(columns=['band', 'val'])
+    df['band'] = list(eeg_bands.keys())
+    df['val'] = [eeg_band_fft[band] for band in eeg_bands]
+    df.plot.bar(x='band', y='val', legend=False, ax=ax)
+    ax.set_title("EEG Power Bands")
+    ax.set_xlabel("Frequency band")
+    ax.set_ylabel("Mean band Amplitude")
+
+    plt.savefig("./psd_plot/{}/{}.png".format(file_name.split(".edf")[0], signal_labels[i]))
+    plt.close()
 
 def main() :
   print("[+] Starting ...")
