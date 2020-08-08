@@ -1,3 +1,2 @@
 *.edf
-signals_plot/*
-psd_plot/*
+*plot/*
