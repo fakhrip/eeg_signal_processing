@@ -332,6 +332,13 @@ def plotPSDSignals(fft_results, type, result_name) :
       ax_alpha.set_xlabel("Frequency band")
       ax_alpha.set_ylabel("Mean band Amplitude")
 
+      for p in ax_alpha.patches:                 
+        ax_alpha.annotate(
+          np.round(p.get_height(),decimals=2), 
+          (p.get_x()+p.get_width()/2., p.get_height()),                              ha='center',                              va='center',                             
+          xytext=(0, 10),                               
+          textcoords='offset points')
+
       df_gamma = pd.DataFrame(columns=["band", "val"])
       df_gamma["band"] = frequencies
       df_gamma["val"] = [(signal[pos]["Gamma"]) for signal in psd_values]
@@ -339,6 +346,13 @@ def plotPSDSignals(fft_results, type, result_name) :
       ax_gamma.set_title("Gamma EEG Power Bands")
       ax_gamma.set_xlabel("Frequency band")
       ax_gamma.set_ylabel("Mean band Amplitude")
+
+      for p in ax_gamma.patches:                 
+        ax_gamma.annotate(
+          np.round(p.get_height(),decimals=2), 
+          (p.get_x()+p.get_width()/2., p.get_height()),                              ha='center',                              va='center',                             
+          xytext=(0, 10),                               
+          textcoords='offset points') 
 
       plt.savefig("./psd_multiple_plot/subject_{}/{}.png".format(result_name[0].split(".")[0].split("_")[-1], channel))
       plt.close()
