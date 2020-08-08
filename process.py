@@ -319,6 +319,8 @@ def plotPSDSignals(fft_results, type, result_name) :
     # So many things that can be more efficient than
     # all these lines of codes (particularly this part below)
     # -------------
+    alpha_signals = list()
+    gamma_signals = list()
     for pos, channel in enumerate(signal_labels) :
       fig = plt.figure(figsize=(20,10), dpi=75)
       ax_alpha = fig.add_subplot(121)
@@ -327,6 +329,9 @@ def plotPSDSignals(fft_results, type, result_name) :
       df_alpha = pd.DataFrame(columns=["band", "val"])
       df_alpha["band"] = frequencies
       df_alpha["val"] = [(signal[pos]["Alpha"]) for signal in psd_values]
+
+      alpha_signals.append([(signal[pos]["Alpha"]) for signal in psd_values])
+
       df_alpha.plot.bar(x="band", y="val", legend=False, ax=ax_alpha)
       ax_alpha.set_title("Alpha EEG Power Bands")
       ax_alpha.set_xlabel("Frequency band")
@@ -344,6 +349,9 @@ def plotPSDSignals(fft_results, type, result_name) :
       df_gamma = pd.DataFrame(columns=["band", "val"])
       df_gamma["band"] = frequencies
       df_gamma["val"] = [(signal[pos]["Gamma"]) for signal in psd_values]
+
+      gamma_signals.append([(signal[pos]["Gamma"]) for signal in psd_values])
+
       df_gamma.plot.bar(x="band", y="val", legend=False, ax=ax_gamma)
       ax_gamma.set_title("Gamma EEG Power Bands")
       ax_gamma.set_xlabel("Frequency band")
@@ -360,6 +368,11 @@ def plotPSDSignals(fft_results, type, result_name) :
 
       plt.savefig("./psd_multiple_plot/subject_{}/{}.png".format(result_name[0].split(".")[0].split("_")[-1], channel))
       plt.close()
+
+    return {
+      "Alpha": alpha_signals,
+      "Gamma": gamma_signals
+    }
 
 
 """
@@ -414,33 +427,129 @@ def processEachSubject(subject, frequencies) :
 
   print("[|] Found {} files matching subject".format(len(filtered_files)))
 
-  results_arr = list()
-  for file in filtered_files :
-    print("[|] Processing {}".format(file))
-    results_arr.append(processEDFFile(file))
+  if len(filtered_files) > 0 :
+    results_arr = list()
 
-  plotPSDSignals(results_arr, "multiple", filtered_files)
-  print("[|] All graphs has been generated to psd_multiple_plot/subject_{}".format(subject))
+    for file in filtered_files :
+      print("[|] Processing {}".format(file))
+      results_arr.append(processEDFFile(file))
+
+    psd_result = plotPSDSignals(results_arr, "multiple", filtered_files)
+    print("[|] All graphs has been generated to psd_multiple_plot/subject_{}".format(subject))
+
+    return {
+      "success": True,
+      "result": psd_result,
+      "channels": results_arr[0]["channels"]
+    }
+
+  return {
+    "success": False
+  }
 
 
 def main() :
   print("[+] Starting ...")
 
   # -----------
-  # Uncomment below if you want to parse each files
+  # Uncomment one line below if you want to parse each files
   # one by one
   # -----------
   # processEachFile()
 
   # -----------
-  # Uncomment below if you want to parse each subject
+  # Uncomment lines below if you want to parse each subject
   # in multiple files
   # -----------
   subject_arr = ["02a", "03a", "04a", "06a", "08a", "09a"]
   frequencies = ["5Hz", "6Hz", "10Hz"]
+
+  all_psd_signals = list()
+  signal_labels = None
   for subject in subject_arr :
     print("\n[|] Parsing files for {} subject".format(subject))
-    processEachSubject(subject, frequencies)
+    psd_result = processEachSubject(subject, frequencies)
+    if psd_result["success"] :
+      all_psd_signals.append(psd_result["result"])
+      signal_labels = psd_result["channels"]
+  
+  if len(all_psd_signals) > 0 :
+
+    # Mean value of all Subjects
+    print("\n[|] Calculating mean value of all subjects")
+    for i in range(len(signal_labels)) :  
+      subjects_mean_values = {
+        "Alpha": list(),
+        "Gamma": list()
+      }
+
+      for j in range(len(frequencies)) :
+        temp = {
+          "Alpha": list(),
+          "Gamma": list()
+        }
+
+        for signal in all_psd_signals :
+          try:
+            temp["Alpha"].append(signal["Alpha"][i][j])
+            temp["Gamma"].append(signal["Gamma"][i][j])
+          except IndexError :
+            pass
+
+        subjects_mean_values["Alpha"].append(np.mean(temp["Alpha"]))
+        subjects_mean_values["Gamma"].append(np.mean(temp["Gamma"]))
+
+      # -------------
+      # TODO: REFACTOR DUDE !!!  
+      #    
+      # Developer must always remember DRY principle
+      # so dont forget to refactor or this will later become 
+      # "Legacy codeee" - in a creepy sound
+      # -------------
+      fig = plt.figure(figsize=(20,10), dpi=75)
+      ax_alpha = fig.add_subplot(121)
+      ax_gamma = fig.add_subplot(122)
+
+      df_alpha = pd.DataFrame(columns=["band", "val"])
+      df_alpha["band"] = frequencies
+      df_alpha["val"] = subjects_mean_values["Alpha"]
+      df_alpha.plot.bar(x="band", y="val", legend=False, ax=ax_alpha)
+      ax_alpha.set_title("Alpha EEG Power Bands")
+      ax_alpha.set_xlabel("Frequency band")
+      ax_alpha.set_ylabel("Mean band Amplitude")
+
+      for p in ax_alpha.patches:                 
+        ax_alpha.annotate(
+          np.round(p.get_height(),decimals=2), 
+          (p.get_x()+p.get_width()/2., p.get_height()),      
+          ha='center',                              
+          va='center',                             
+          xytext=(0, 10),                               
+          textcoords='offset points')
+
+      df_gamma = pd.DataFrame(columns=["band", "val"])
+      df_gamma["band"] = frequencies
+      df_gamma["val"] = subjects_mean_values["Gamma"]
+      df_gamma.plot.bar(x="band", y="val", legend=False, ax=ax_gamma)
+      ax_gamma.set_title("Gamma EEG Power Bands")
+      ax_gamma.set_xlabel("Frequency band")
+      ax_gamma.set_ylabel("Mean band Amplitude")
+
+      for p in ax_gamma.patches:                 
+        ax_gamma.annotate(
+          np.round(p.get_height(),decimals=2), 
+          (p.get_x()+p.get_width()/2., p.get_height()),                              
+          ha='center',
+          va='center',                             
+          xytext=(0, 10),                               
+          textcoords='offset points') 
+
+      plt.savefig("mean_{}.png".format(signal_labels[i]))
+      plt.close()
+
+  # Mean of O's and P's from all subjects
+
+  print("\n[+] Finished Successfully :D")
 
 
 if __name__ == "__main__" :
