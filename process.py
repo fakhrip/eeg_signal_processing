@@ -335,7 +335,9 @@ def plotPSDSignals(fft_results, type, result_name) :
       for p in ax_alpha.patches:                 
         ax_alpha.annotate(
           np.round(p.get_height(),decimals=2), 
-          (p.get_x()+p.get_width()/2., p.get_height()),                              ha='center',                              va='center',                             
+          (p.get_x()+p.get_width()/2., p.get_height()),      
+          ha='center',                              
+          va='center',                             
           xytext=(0, 10),                               
           textcoords='offset points')
 
@@ -350,7 +352,9 @@ def plotPSDSignals(fft_results, type, result_name) :
       for p in ax_gamma.patches:                 
         ax_gamma.annotate(
           np.round(p.get_height(),decimals=2), 
-          (p.get_x()+p.get_width()/2., p.get_height()),                              ha='center',                              va='center',                             
+          (p.get_x()+p.get_width()/2., p.get_height()),                              
+          ha='center',
+          va='center',                             
           xytext=(0, 10),                               
           textcoords='offset points') 
 
