@@ -477,6 +477,9 @@ def main() :
 
     # Mean value of all Subjects
     print("\n[|] Calculating mean value of all subjects")
+
+    channels_mean_values = list()
+
     for i in range(len(signal_labels)) :  
       subjects_mean_values = {
         "Alpha": list(),
@@ -498,6 +501,8 @@ def main() :
 
         subjects_mean_values["Alpha"].append(np.mean(temp["Alpha"]))
         subjects_mean_values["Gamma"].append(np.mean(temp["Gamma"]))
+
+      channels_mean_values.append(subjects_mean_values)
 
       # -------------
       # TODO: REFACTOR DUDE !!!  
@@ -547,7 +552,130 @@ def main() :
       plt.savefig("mean_{}.png".format(signal_labels[i]))
       plt.close()
 
-  # Mean of O's and P's from all subjects
+    # Mean of O's and P's from all subjects
+    o_mean_values = {
+      "Alpha": list(),
+      "Gamma": list()
+    }
+    
+    p_mean_values = {
+      "Alpha": list(),
+      "Gamma": list()
+    }
+    
+    for i, channel in enumerate(signal_labels) :
+      if "O" in channel or "o" in channel :
+        o_mean_values["Alpha"].append(channels_mean_values[i]["Alpha"])
+        o_mean_values["Gamma"].append(channels_mean_values[i]["Gamma"])
+      elif "P" in channel or "p" in channel :
+        p_mean_values["Alpha"].append(channels_mean_values[i]["Alpha"])
+        p_mean_values["Gamma"].append(channels_mean_values[i]["Gamma"])
+
+    # -------------
+    # TODO: REFACTOR DUDE !!!  
+    #    
+    # Developer must always remember DRY principle
+    # so dont forget to refactor or this will later become 
+    # "Legacy codeee" - in a creepy sound
+    # -------------
+    # I even copy the todo so i have to refactor it too XD
+    # -------------
+    fig = plt.figure(figsize=(20,10), dpi=75)
+    ax_alpha = fig.add_subplot(121)
+    ax_gamma = fig.add_subplot(122)
+
+    # TODO: REPLACE EVERY DUMB THING WITH THIS
+    # https://stackoverflow.com/questions/15819980/calculate-mean-across-dimension-in-a-2d-array
+
+    df_alpha = pd.DataFrame(columns=["band", "val"])
+    df_alpha["band"] = frequencies
+    df_alpha["val"] = [float(sum(l))/len(l) for l in zip(*o_mean_values["Alpha"])]
+    df_alpha.plot.bar(x="band", y="val", legend=False, ax=ax_alpha)
+    ax_alpha.set_title("Alpha EEG Power Bands")
+    ax_alpha.set_xlabel("Frequency band")
+    ax_alpha.set_ylabel("Mean band Amplitude")
+
+    for p in ax_alpha.patches:                 
+      ax_alpha.annotate(
+        np.round(p.get_height(),decimals=2), 
+        (p.get_x()+p.get_width()/2., p.get_height()),      
+        ha='center',                              
+        va='center',                             
+        xytext=(0, 10),                               
+        textcoords='offset points')
+
+    df_gamma = pd.DataFrame(columns=["band", "val"])
+    df_gamma["band"] = frequencies
+    df_gamma["val"] = [float(sum(l))/len(l) for l in zip(*o_mean_values["Gamma"])]
+    df_gamma.plot.bar(x="band", y="val", legend=False, ax=ax_gamma)
+    ax_gamma.set_title("Gamma EEG Power Bands")
+    ax_gamma.set_xlabel("Frequency band")
+    ax_gamma.set_ylabel("Mean band Amplitude")
+
+    for p in ax_gamma.patches:                 
+      ax_gamma.annotate(
+        np.round(p.get_height(),decimals=2), 
+        (p.get_x()+p.get_width()/2., p.get_height()),                              
+        ha='center',
+        va='center',                             
+        xytext=(0, 10),                               
+        textcoords='offset points') 
+
+    plt.savefig("mean_O.png")
+    plt.close()
+
+    # -------------
+    # TODO: REFACTOR DUDE !!!  
+    #    
+    # Developer must always remember DRY principle
+    # so dont forget to refactor or this will later become 
+    # "Legacy codeee" - in a creepy sound
+    # -------------
+    # I even copy the todo so i have to refactor it too XD
+    # -------------
+    fig = plt.figure(figsize=(20,10), dpi=75)
+    ax_alpha = fig.add_subplot(121)
+    ax_gamma = fig.add_subplot(122)
+
+    # TODO: REPLACE EVERY DUMB THING WITH THIS
+    # https://stackoverflow.com/questions/15819980/calculate-mean-across-dimension-in-a-2d-array
+
+    df_alpha = pd.DataFrame(columns=["band", "val"])
+    df_alpha["band"] = frequencies
+    df_alpha["val"] = [float(sum(l))/len(l) for l in zip(*p_mean_values["Alpha"])]
+    df_alpha.plot.bar(x="band", y="val", legend=False, ax=ax_alpha)
+    ax_alpha.set_title("Alpha EEG Power Bands")
+    ax_alpha.set_xlabel("Frequency band")
+    ax_alpha.set_ylabel("Mean band Amplitude")
+
+    for p in ax_alpha.patches:                 
+      ax_alpha.annotate(
+        np.round(p.get_height(),decimals=2), 
+        (p.get_x()+p.get_width()/2., p.get_height()),      
+        ha='center',                              
+        va='center',                             
+        xytext=(0, 10),                               
+        textcoords='offset points')
+
+    df_gamma = pd.DataFrame(columns=["band", "val"])
+    df_gamma["band"] = frequencies
+    df_gamma["val"] = [float(sum(l))/len(l) for l in zip(*p_mean_values["Gamma"])]
+    df_gamma.plot.bar(x="band", y="val", legend=False, ax=ax_gamma)
+    ax_gamma.set_title("Gamma EEG Power Bands")
+    ax_gamma.set_xlabel("Frequency band")
+    ax_gamma.set_ylabel("Mean band Amplitude")
+
+    for p in ax_gamma.patches:                 
+      ax_gamma.annotate(
+        np.round(p.get_height(),decimals=2), 
+        (p.get_x()+p.get_width()/2., p.get_height()),                              
+        ha='center',
+        va='center',                             
+        xytext=(0, 10),                               
+        textcoords='offset points') 
+
+    plt.savefig("mean_P.png")
+    plt.close()
 
   print("\n[+] Finished Successfully :D")
 
