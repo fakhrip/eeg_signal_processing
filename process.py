@@ -12,7 +12,7 @@ def butter_bandpass(lowcut, highcut, fs, order=5):
   nyq = 0.5 * fs
   low = lowcut / nyq
   high = highcut / nyq
-  b, a = butter(order, [low, high], btype='band')
+  b, a = butter(order, [low, high], btype="band")
   return b, a
 
 
@@ -157,7 +157,8 @@ def processEDFFile(file_name) :
   # signal_labels = properties["signal_labels"]
   # sampling_freq = properties["sampling_frequency"]
 
-  signal_labels = ["EEG PO8", "EEG PO7", "EEG P8", "EEG P7", "EEG O1", "EEG O2", "EEG PO3", "EEG PO4"]
+  # signal_labels = ["EEG PO8", "EEG PO7", "EEG P8", "EEG P7", "EEG O1", "EEG O2", "EEG PO3", "EEG PO4"]
+  signal_labels = ["EEG P8", "EEG P7", "EEG O1", "EEG O2"]
   sampling_freq = 64 # in Hertz
   sampling_duration = properties["sampling_duration"]
   n_samples = sampling_freq * sampling_duration 
@@ -214,8 +215,6 @@ def processEDFFile(file_name) :
                 plotData["spec"][1, 1],
                 1)
 
-  print("[|] Plotting PSD Signal")
-
   # Create signals_plot folder if not exist
   try:  
     os.mkdir("./signals_plot")  
@@ -224,62 +223,207 @@ def processEDFFile(file_name) :
 
   generatePlotsToPNG(file_name)
 
+  return {
+    "fft_signals": transformed_signals["signals"].transpose(),
+    "fft_freq": transformed_signals["frequency"],
+    "channels": signal_labels
+  }
+
+
+def plotPSDSignals(fft_results, type, result_name) :
+  print("[|] Plotting {} PSD Signal(s)".format(type))
+
   # Define EEG band frequencies
   eeg_bands = {
-    "Delta": (0, 4),
-    "Theta": (4, 8),
+    # "Delta": (0, 4),
+    # "Theta": (4, 8),
     "Alpha": (8, 12),
-    "Beta": (12, 30),
+    # "Beta": (12, 30),
     "Gamma": (30, 45)
   }
 
-  signals = transformed_signals["signals"].transpose()
-  fft_freq = transformed_signals["frequency"]
+  if type == "single" :
 
-  try:  
-    os.makedirs("./psd_plot/{}".format(file_name.split(".edf")[0]))  
-  except OSError as error:  
-    pass
+    fft_signals = fft_results["fft_signals"]
+    fft_freq = fft_results["fft_freq"]
 
-  # Take the mean of the fft amplitude for each EEG band
-  for i in range(len(signals)) :
-    fft_vals = signals[i]
+    signal_labels = fft_results["channels"]    
+    
+    try:  
+      os.makedirs("./psd_single_plot/{}".format(result_name.split(".edf")[0]))  
+    except OSError as error:  
+      pass
 
-    eeg_band_fft = dict()
-    for band in eeg_bands:  
-      freq_ix = np.where((fft_freq >= eeg_bands[band][0]) & 
-                        (fft_freq <= eeg_bands[band][1]))[0]
-      eeg_band_fft[band] = np.mean(fft_vals[freq_ix])
+    # Take the mean of the fft amplitude for 
+    # each EEG band in each channel
+    for i in range(len(fft_signals)) :
+      fft_vals = fft_signals[i]
 
-    fig = plt.figure(figsize=(20,10), dpi=75)
-    ax = fig.add_subplot(111)
+      eeg_band_fft = dict()
+      for band in eeg_bands:  
+        freq_ix = np.where((fft_freq >= eeg_bands[band][0]) & 
+                          (fft_freq <= eeg_bands[band][1]))[0]
+        eeg_band_fft[band] = np.mean(fft_vals[freq_ix])
 
-    df = pd.DataFrame(columns=['band', 'val'])
-    df['band'] = list(eeg_bands.keys())
-    df['val'] = [eeg_band_fft[band] for band in eeg_bands]
-    df.plot.bar(x='band', y='val', legend=False, ax=ax)
-    ax.set_title("EEG Power Bands")
-    ax.set_xlabel("Frequency band")
-    ax.set_ylabel("Mean band Amplitude")
+      fig = plt.figure(figsize=(20,10), dpi=75)
+      ax = fig.add_subplot(111)
 
-    plt.savefig("./psd_plot/{}/{}.png".format(file_name.split(".edf")[0], signal_labels[i]))
-    plt.close()
+      df = pd.DataFrame(columns=["band", "val"])
+      df["band"] = list(eeg_bands.keys())
+      df["val"] = [eeg_band_fft[band] for band in eeg_bands]
+      df.plot.bar(x="band", y="val", legend=False, ax=ax)
+      ax.set_title("EEG Power Bands")
+      ax.set_xlabel("Frequency band")
+      ax.set_ylabel("Mean band Amplitude")
 
-def main() :
-  print("[+] Starting ...")
+      plt.savefig("./psd_single_plot/{}/{}.png".format(result_name.split(".edf")[0], signal_labels[i]))
+      plt.close()
+
+  elif type == "multiple" :
+      
+    signal_labels = fft_results[0]["channels"]  
+
+    try:  
+      os.makedirs("./psd_multiple_plot/subject_{}".format(result_name[0].split(".")[0].split("_")[-1]))  
+    except OSError as error:  
+      pass
+    
+    psd_values = list()
+    for result in fft_results :
+      fft_signals = result["fft_signals"]
+      fft_freq = result["fft_freq"]  
+
+      # Take the mean of the fft amplitude for 
+      # each EEG band in each channel
+      channel_values = list()
+      for i in range(len(fft_signals)) :
+        fft_vals = fft_signals[i]
+
+        eeg_band_fft = dict()
+        for band in eeg_bands:  
+          freq_ix = np.where((fft_freq >= eeg_bands[band][0]) & 
+                            (fft_freq <= eeg_bands[band][1]))[0]
+          eeg_band_fft[band] = np.mean(fft_vals[freq_ix])
+
+        channel_values.append(eeg_band_fft)
+
+      psd_values.append(channel_values)
+
+    frequencies = list()
+    for result in result_name :
+      frequencies.append(result.split(".")[0].split("_")[1])
+
+    # -------------
+    # TODO: Change this crappy lines of codes  
+    #    
+    # So many things that can be more efficient than
+    # all these lines of codes (particularly this part below)
+    # -------------
+    for pos, channel in enumerate(signal_labels) :
+      fig = plt.figure(figsize=(20,10), dpi=75)
+      ax_alpha = fig.add_subplot(121)
+      ax_gamma = fig.add_subplot(122)
+
+      df_alpha = pd.DataFrame(columns=["band", "val"])
+      df_alpha["band"] = frequencies
+      df_alpha["val"] = [(signal[pos]["Alpha"]) for signal in psd_values]
+      df_alpha.plot.bar(x="band", y="val", legend=False, ax=ax_alpha)
+      ax_alpha.set_title("Alpha EEG Power Bands")
+      ax_alpha.set_xlabel("Frequency band")
+      ax_alpha.set_ylabel("Mean band Amplitude")
+
+      df_gamma = pd.DataFrame(columns=["band", "val"])
+      df_gamma["band"] = frequencies
+      df_gamma["val"] = [(signal[pos]["Gamma"]) for signal in psd_values]
+      df_gamma.plot.bar(x="band", y="val", legend=False, ax=ax_gamma)
+      ax_gamma.set_title("Gamma EEG Power Bands")
+      ax_gamma.set_xlabel("Frequency band")
+      ax_gamma.set_ylabel("Mean band Amplitude")
+
+      plt.savefig("./psd_multiple_plot/subject_{}/{}.png".format(result_name[0].split(".")[0].split("_")[-1], channel))
+      plt.close()
+
+
+"""
+Process all edf files one by one
+
+Will resulted to a plot of all selected channels 
+in a file
+"""
+def processEachFile() :
   isExist = False
-  files = [f for f in os.listdir('.') if os.path.isfile(f)]
+
+  files = [f for f in os.listdir(".") if os.path.isfile(f)]
   for f in files :
-    if(f.split(".")[-1] == "edf") :
+    if f.split(".")[-1] == "edf" :
       isExist = True
       print("\n[|] Processing {}".format(f))
-      processEDFFile(f)
-      print("[|] Graph for {} has been generated to {}.png".format(f, f.split(".edf")[0]))
+      result = processEDFFile(f)
+      plotPSDSignals(result, "single", f)
+      print("[|] Graph for {} has been generated to psd_single_plot/{}".format(f.split(".edf")[0]))
 
   if not isExist :
     print("\n[!] There are no .edf file found")
   else :
     print("\n[+] All process finished successfully")
+
+
+"""
+Process all edf files based on subject and frequency
+
+Will resulted to a plot of a subject with 
+some frequencies on the corresponding channel
+
+File name format must be:
+[a-zA-Z0-9]_[frequency]_[subject].edf
+
+Example:
+rsvp_5Hz_02a.edf
+
+param: 
+- subject (required) [subject to process]
+- frequencies (required) [array of all selected frequencies (if exist)]
+"""
+def processEachSubject(subject, frequencies) :
+  isExist = False
+
+  files = [f for f in os.listdir(".") if os.path.isfile(f)]
+  filtered_files = list()
+  for f in files :
+    if f.split(".")[-1] == "edf" :
+      if f.split(".")[0].split("_")[1] in frequencies and f.split(".")[0].split("_")[-1] == subject :
+        filtered_files.append(f)
+
+  print("[|] Found {} files matching subject".format(len(filtered_files)))
+
+  results_arr = list()
+  for file in filtered_files :
+    print("[|] Processing {}".format(file))
+    results_arr.append(processEDFFile(file))
+
+  plotPSDSignals(results_arr, "multiple", filtered_files)
+  print("[|] All graphs has been generated to psd_multiple_plot/subject_{}".format(subject))
+
+
+def main() :
+  print("[+] Starting ...")
+
+  # -----------
+  # Uncomment below if you want to parse each files
+  # one by one
+  # -----------
+  # processEachFile()
+
+  # -----------
+  # Uncomment below if you want to parse each subject
+  # in multiple files
+  # -----------
+  subject_arr = ["02a", "03a", "04a", "06a", "08a", "09a"]
+  frequencies = ["5Hz", "6Hz", "10Hz"]
+  for subject in subject_arr :
+    print("\n[|] Parsing files for {} subject".format(subject))
+    processEachSubject(subject, frequencies)
+
 
 if __name__ == "__main__" :
   main()
