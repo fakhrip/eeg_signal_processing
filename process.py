@@ -375,6 +375,10 @@ def plotPSDSignals(fft_results, type, result_name) :
     }
 
 
+def sortbyFrequency(x):
+  return int(x.split("_")[1].split("Hz")[0])
+
+
 """
 Process all edf files one by one
 
@@ -424,6 +428,8 @@ def processEachSubject(subject, frequencies) :
     if f.split(".")[-1] == "edf" :
       if f.split(".")[0].split("_")[1] in frequencies and f.split(".")[0].split("_")[-1] == subject :
         filtered_files.append(f)
+
+  filtered_files.sort(key=sortbyFrequency)
 
   print("[|] Found {} files matching subject".format(len(filtered_files)))
 
