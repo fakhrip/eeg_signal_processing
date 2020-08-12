@@ -294,7 +294,6 @@ def plotPSDSignals(fft_results, type, result_name) :
       pass
     
     psd_values = list()
-    psd_stds = list()
     for result in fft_results :
       fft_signals = result["fft_signals"]
       fft_freq = result["fft_freq"]  
@@ -302,23 +301,18 @@ def plotPSDSignals(fft_results, type, result_name) :
       # Take the mean of the fft amplitude for 
       # each EEG band in each channel
       channel_values = list()
-      channel_stds = list()
       for i in range(len(fft_signals)) :
         fft_vals = fft_signals[i]
 
         eeg_band_fft_mean = dict()
-        eeg_band_fft_std = dict()
         for band in eeg_bands:  
           freq_ix = np.where((fft_freq >= eeg_bands[band][0]) & 
                             (fft_freq <= eeg_bands[band][1]))[0]
           eeg_band_fft_mean[band] = np.mean(fft_vals[freq_ix])
-          eeg_band_fft_std[band] = np.std(fft_vals[freq_ix])
 
         channel_values.append(eeg_band_fft_mean)
-        channel_stds.append(eeg_band_fft_std)
 
       psd_values.append(channel_values)
-      psd_stds.append(channel_stds)
 
     frequencies = list()
     for result in result_name :
@@ -343,8 +337,7 @@ def plotPSDSignals(fft_results, type, result_name) :
 
       alpha_signals.append([(signal[pos]["Alpha"]) for signal in psd_values])
 
-      yer = [(signal[pos]["Alpha"]) for signal in psd_stds]
-      df_alpha.plot.bar(x="band", y="val", legend=False, ax=ax_alpha, yerr=yer, color=['yellow', 'lightgreen', 'cyan'])
+      df_alpha.plot.bar(x="band", y="val", legend=False, ax=ax_alpha, color=['yellow', 'lightgreen', 'cyan'])
 
       ax_alpha.set_title("Alpha EEG Power Bands")
       ax_alpha.set_xlabel("Frequency band")
@@ -365,8 +358,7 @@ def plotPSDSignals(fft_results, type, result_name) :
 
       gamma_signals.append([(signal[pos]["Gamma"]) for signal in psd_values])
 
-      yer = [(signal[pos]["Gamma"]) for signal in psd_stds]
-      df_gamma.plot.bar(x="band", y="val", legend=False, ax=ax_gamma, yerr=yer, color=['yellow', 'lightgreen', 'cyan'])
+      df_gamma.plot.bar(x="band", y="val", legend=False, ax=ax_gamma, color=['yellow', 'lightgreen', 'cyan'])
 
       ax_gamma.set_title("Gamma EEG Power Bands")
       ax_gamma.set_xlabel("Frequency band")
@@ -488,7 +480,7 @@ def main() :
   # Uncomment lines below if you want to parse each subject
   # in multiple files
   # -----------
-  subject_arr = ["02a", "03a", "04a", "06a", "08a", "09a"]
+  subject_arr = ["02a", "03a", "04a", "06a", "08a", "09a", "10a"]
   frequencies = ["5Hz", "6Hz", "10Hz"]
 
   all_psd_signals = list()
