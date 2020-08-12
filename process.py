@@ -271,7 +271,10 @@ def plotPSDSignals(fft_results, type, result_name) :
       df = pd.DataFrame(columns=["band", "val"])
       df["band"] = list(eeg_bands.keys())
       df["val"] = [eeg_band_fft[band] for band in eeg_bands]
-      df.plot.bar(x="band", y="val", legend=False, ax=ax)
+
+      yer = [np.std(eeg_band_fft[band]) for band in eeg_bands]
+      df.plot.bar(x="band", y="val", legend=False, ax=ax, yerr=yer, color=['yellow', 'lightgreen', 'cyan'])
+      
       ax.set_title("EEG Power Bands")
       ax.set_xlabel("Frequency band")
       ax.set_ylabel("Mean band Amplitude")
@@ -332,7 +335,9 @@ def plotPSDSignals(fft_results, type, result_name) :
 
       alpha_signals.append([(signal[pos]["Alpha"]) for signal in psd_values])
 
-      df_alpha.plot.bar(x="band", y="val", legend=False, ax=ax_alpha)
+      yer = [np.std((signal[pos]["Alpha"])) for signal in psd_values]
+      df_alpha.plot.bar(x="band", y="val", legend=False, ax=ax_alpha, yerr=yer, color=['yellow', 'lightgreen', 'cyan'])
+
       ax_alpha.set_title("Alpha EEG Power Bands")
       ax_alpha.set_xlabel("Frequency band")
       ax_alpha.set_ylabel("Mean band Amplitude")
@@ -352,7 +357,9 @@ def plotPSDSignals(fft_results, type, result_name) :
 
       gamma_signals.append([(signal[pos]["Gamma"]) for signal in psd_values])
 
-      df_gamma.plot.bar(x="band", y="val", legend=False, ax=ax_gamma)
+      yer = [np.std((signal[pos]["Gamma"])) for signal in psd_values]
+      df_gamma.plot.bar(x="band", y="val", legend=False, ax=ax_gamma, yerr=yer, color=['yellow', 'lightgreen', 'cyan'])
+
       ax_gamma.set_title("Gamma EEG Power Bands")
       ax_gamma.set_xlabel("Frequency band")
       ax_gamma.set_ylabel("Mean band Amplitude")
@@ -457,6 +464,12 @@ def processEachSubject(subject, frequencies) :
 def main() :
   print("[+] Starting ...")
 
+  # Initialize matlab properties
+  plt.rc('axes', titlesize = 22)
+  plt.rc('axes', labelsize = 17)
+  plt.rc('xtick', labelsize = 15)
+  plt.rc('ytick', labelsize = 15)
+
   # -----------
   # Uncomment one line below if you want to parse each files
   # one by one
@@ -524,7 +537,10 @@ def main() :
       df_alpha = pd.DataFrame(columns=["band", "val"])
       df_alpha["band"] = frequencies
       df_alpha["val"] = subjects_mean_values["Alpha"]
-      df_alpha.plot.bar(x="band", y="val", legend=False, ax=ax_alpha)
+
+      yer = [np.std(val) for val in subjects_mean_values["Alpha"]]
+      df_alpha.plot.bar(x="band", y="val", legend=False, ax=ax_alpha, yerr=yer, color=['yellow', 'lightgreen', 'cyan'])
+
       ax_alpha.set_title("Alpha EEG Power Bands")
       ax_alpha.set_xlabel("Frequency band")
       ax_alpha.set_ylabel("Mean band Amplitude")
@@ -541,7 +557,10 @@ def main() :
       df_gamma = pd.DataFrame(columns=["band", "val"])
       df_gamma["band"] = frequencies
       df_gamma["val"] = subjects_mean_values["Gamma"]
-      df_gamma.plot.bar(x="band", y="val", legend=False, ax=ax_gamma)
+
+      yer = [np.std(val) for val in subjects_mean_values["Gamma"]]
+      df_gamma.plot.bar(x="band", y="val", legend=False, ax=ax_gamma, yerr=yer, color=['yellow', 'lightgreen', 'cyan'])
+
       ax_gamma.set_title("Gamma EEG Power Bands")
       ax_gamma.set_xlabel("Frequency band")
       ax_gamma.set_ylabel("Mean band Amplitude")
@@ -596,7 +615,10 @@ def main() :
     df_alpha = pd.DataFrame(columns=["band", "val"])
     df_alpha["band"] = frequencies
     df_alpha["val"] = [float(sum(l))/len(l) for l in zip(*o_mean_values["Alpha"])]
-    df_alpha.plot.bar(x="band", y="val", legend=False, ax=ax_alpha)
+
+    yer = [np.std(float(sum(l))/len(l)) for l in zip(*o_mean_values["Alpha"])]
+    df_alpha.plot.bar(x="band", y="val", legend=False, ax=ax_alpha, yerr=yer, color=['yellow', 'lightgreen', 'cyan'])
+    
     ax_alpha.set_title("Alpha EEG Power Bands")
     ax_alpha.set_xlabel("Frequency band")
     ax_alpha.set_ylabel("Mean band Amplitude")
@@ -613,7 +635,10 @@ def main() :
     df_gamma = pd.DataFrame(columns=["band", "val"])
     df_gamma["band"] = frequencies
     df_gamma["val"] = [float(sum(l))/len(l) for l in zip(*o_mean_values["Gamma"])]
-    df_gamma.plot.bar(x="band", y="val", legend=False, ax=ax_gamma)
+
+    yer = [np.std(float(sum(l))/len(l)) for l in zip(*o_mean_values["Gamma"])]
+    df_gamma.plot.bar(x="band", y="val", legend=False, ax=ax_gamma, yerr=yer, color=['yellow', 'lightgreen', 'cyan'])
+
     ax_gamma.set_title("Gamma EEG Power Bands")
     ax_gamma.set_xlabel("Frequency band")
     ax_gamma.set_ylabel("Mean band Amplitude")
@@ -649,7 +674,10 @@ def main() :
     df_alpha = pd.DataFrame(columns=["band", "val"])
     df_alpha["band"] = frequencies
     df_alpha["val"] = [float(sum(l))/len(l) for l in zip(*p_mean_values["Alpha"])]
-    df_alpha.plot.bar(x="band", y="val", legend=False, ax=ax_alpha)
+
+    yer = [np.std(float(sum(l))/len(l)) for l in zip(*p_mean_values["Alpha"])]
+    df_alpha.plot.bar(x="band", y="val", legend=False, ax=ax_alpha, yerr=yer, color=['yellow', 'lightgreen', 'cyan'])
+    
     ax_alpha.set_title("Alpha EEG Power Bands")
     ax_alpha.set_xlabel("Frequency band")
     ax_alpha.set_ylabel("Mean band Amplitude")
@@ -666,7 +694,10 @@ def main() :
     df_gamma = pd.DataFrame(columns=["band", "val"])
     df_gamma["band"] = frequencies
     df_gamma["val"] = [float(sum(l))/len(l) for l in zip(*p_mean_values["Gamma"])]
-    df_gamma.plot.bar(x="band", y="val", legend=False, ax=ax_gamma)
+
+    yer = [np.std(float(sum(l))/len(l)) for l in zip(*p_mean_values["Gamma"])]
+    df_gamma.plot.bar(x="band", y="val", legend=False, ax=ax_gamma, yerr=yer, color=['yellow', 'lightgreen', 'cyan'])
+    
     ax_gamma.set_title("Gamma EEG Power Bands")
     ax_gamma.set_xlabel("Frequency band")
     ax_gamma.set_ylabel("Mean band Amplitude")
