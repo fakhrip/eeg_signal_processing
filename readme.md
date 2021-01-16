@@ -1,5 +1,10 @@
 # EEG Signal Processing
 
+## Published paper
+
+This is the published paper of the research  
+https://ieeexplore.ieee.org/abstract/document/9298684/metrics#metrics
+
 ## Introduction
 
 Repository ini berisi script yang bisa digunakan untuk memproses sinyal EEG dengan menggunakan beberapa metode yang bertujuan untuk mengklasifikasikan sinyal otak
