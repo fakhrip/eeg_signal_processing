@@ -3,7 +3,7 @@
 ## Published paper
 
 This is the published paper of the research  
-https://ieeexplore.ieee.org/abstract/document/9298684/metrics#metrics
+https://ieeexplore.ieee.org/abstract/document/9298684/
 
 ## Introduction
 
